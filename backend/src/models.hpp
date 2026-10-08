@@ -46,15 +46,17 @@ public:
     QuoteRequest(const std::string& name,
                  const std::string& phone,
                  const std::string& email,
+                 const std::string& address,
                  const std::string& service,
                  const std::string& details)
         : id_(0), name_(name), phone_(phone), email_(email),
-          service_(service), details_(details) {}
+          address_(address), service_(service), details_(details) {}
 
     long long id() const { return id_; }
     const std::string& name() const { return name_; }
     const std::string& phone() const { return phone_; }
     const std::string& email() const { return email_; }
+    const std::string& address() const { return address_; }
     const std::string& service() const { return service_; }
     const std::string& details() const { return details_; }
     const std::string& createdAt() const { return created_at_; }
@@ -68,6 +70,7 @@ public:
     bool isValid(std::string& whyNot) const {
         if (name_.empty()) { whyNot = "name is required"; return false; }
         if (phone_.empty()) { whyNot = "phone is required"; return false; }
+        if (address_.empty()) { whyNot = "service address is required"; return false; }
         if (service_.empty()) { whyNot = "service is required"; return false; }
         if (!email_.empty()) {
             size_t at = email_.find('@');
@@ -86,6 +89,7 @@ public:
         j["name"] = name_;
         j["phone"] = phone_;
         j["email"] = email_;
+        j["address"] = address_;
         j["service"] = service_;
         j["details"] = details_;
         j["created_at"] = created_at_;
@@ -97,6 +101,7 @@ private:
     std::string name_;
     std::string phone_;
     std::string email_;
+    std::string address_;
     std::string service_;
     std::string details_;
     std::string created_at_;

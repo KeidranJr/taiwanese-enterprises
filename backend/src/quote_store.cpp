@@ -29,12 +29,22 @@ bool QuoteStore::createTable() {
         " name TEXT NOT NULL,"
         " phone TEXT NOT NULL,"
         " email TEXT NOT NULL DEFAULT '',"
+        " address TEXT NOT NULL DEFAULT '',"
         " service TEXT NOT NULL,"
         " details TEXT NOT NULL DEFAULT '',"
         " created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))"
         ");";
     char* err = nullptr;
     bool good = (sqlite3_exec(db_, sql, nullptr, nullptr, &err) == SQLITE_OK);
+    if (err) sqlite3_free(err);
+    // Databases created before the address field existed do not get the
+    // new column from CREATE TABLE IF NOT EXISTS, so add it here. On a
+    // fresh database this fails with "duplicate column" and that is fine.
+    err = nullptr;
+    sqlite3_exec(db_,
+                 "ALTER TABLE quotes ADD COLUMN"
+                 " address TEXT NOT NULL DEFAULT '';",
+                 nullptr, nullptr, &err);
     if (err) sqlite3_free(err);
     return good;
 }
@@ -44,8 +54,8 @@ bool QuoteStore::addQuote(const QuoteRequest& q, long long& newId) {
     if (!db_) return false;
 
     const char* sql =
-        "INSERT INTO quotes (name, phone, email, service, details)"
-        " VALUES (?, ?, ?, ?, ?);";
+        "INSERT INTO quotes (name, phone, email, address, service, details)"
+        " VALUES (?, ?, ?, ?, ?, ?);";
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return false;
@@ -53,8 +63,9 @@ bool QuoteStore::addQuote(const QuoteRequest& q, long long& newId) {
     sqlite3_bind_text(stmt, 1, q.name().c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, q.phone().c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 3, q.email().c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 4, q.service().c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 5, q.details().c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, q.address().c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, q.service().c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, q.details().c_str(), -1, SQLITE_TRANSIENT);
 
     bool good = (sqlite3_step(stmt) == SQLITE_DONE);
     if (good) {
@@ -70,7 +81,7 @@ std::vector<QuoteRequest> QuoteStore::allQuotes() {
     if (!db_) return out;
 
     const char* sql =
-        "SELECT id, name, phone, email, service, details, created_at"
+        "SELECT id, name, phone, email, address, service, details, created_at"
         " FROM quotes ORDER BY id DESC;";
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -82,10 +93,11 @@ std::vector<QuoteRequest> QuoteStore::allQuotes() {
             reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)),
             reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)),
             reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4)),
-            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)));
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5)),
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)));
         q.setId(sqlite3_column_int64(stmt, 0));
         q.setCreatedAt(
-            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6)));
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7)));
         out.push_back(q);
     }
     sqlite3_finalize(stmt);

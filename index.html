@@ -193,6 +193,10 @@
           <input type="email" id="qEmail" name="email" autocomplete="email" required />
         </div>
         <div class="form-field">
+          <label for="qAddress">Service address</label>
+          <input type="text" id="qAddress" name="address" autocomplete="street-address" placeholder="Street address, city, ZIP" required />
+        </div>
+        <div class="form-field">
           <label for="qService">Service needed</label>
           <select id="qService" name="service" required>
             <option value="" disabled selected>Select a service</option>
@@ -213,7 +217,7 @@
           <label for="qMsg">Tell us about the job</label>
           <textarea id="qMsg" name="message" rows="4" placeholder="What, where, and when?"></textarea>
         </div>
-        <p class="form-error" id="formError" role="alert" hidden>Please fill in your name, phone, email, and pick a service.</p>
+        <p class="form-error" id="formError" role="alert" hidden>Please fill in your name, phone, email, service address, and pick a service.</p>
         <button type="submit" class="btn btn-gold btn-lg btn-block">Send Quote Request</button>
         <p class="form-note">This opens your email app addressed to us with your request prefilled.</p>
       </form>

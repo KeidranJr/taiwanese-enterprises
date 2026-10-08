@@ -52,11 +52,12 @@
       var name = document.getElementById("qName").value.trim();
       var phone = document.getElementById("qPhone").value.trim();
       var email = document.getElementById("qEmail").value.trim();
+      var address = document.getElementById("qAddress").value.trim();
       var service = document.getElementById("qService").value;
       var message = document.getElementById("qMsg").value.trim();
 
       var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-      if (!name || !phone || !emailOk || !service) {
+      if (!name || !phone || !emailOk || !address || !service) {
         err.hidden = false;
         return;
       }
@@ -70,6 +71,7 @@
           "Name: " + name,
           "Phone: " + phone,
           "Email: " + email,
+          "Service address: " + address,
           "Service: " + service,
           "",
           "Job details:",
@@ -97,6 +99,7 @@
           name: name,
           phone: phone,
           email: email,
+          address: address,
           service: service,
           details: message
         })

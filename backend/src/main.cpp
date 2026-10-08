@@ -149,6 +149,7 @@ int main() {
                 strField(body, "name"),
                 strField(body, "phone"),
                 strField(body, "email"),
+                strField(body, "address"),
                 strField(body, "service"),
                 strField(body, "details"));
 
