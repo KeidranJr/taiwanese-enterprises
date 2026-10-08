@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  var BUSINESS_EMAIL = "keidranwillisjr@gmail.com";
+  var BUSINESS_EMAIL = "taiwanenterprisellc@gmail.com";
 
   // ---- Mobile nav toggle ----
   var toggle = document.getElementById("navToggle");
@@ -40,7 +40,10 @@
     revealEls.forEach(function (el) { el.classList.add("visible"); });
   }
 
-  // ---- Quote form -> mailto ----
+  // ---- Quote form: backend API first, email fallback ----
+  // Tries POST /api/quote (the C++ server). When the site is on plain
+  // static hosting with no backend, the fetch fails and we fall back
+  // to the original mailto behavior so the form never breaks.
   var form = document.getElementById("quoteForm");
   var err = document.getElementById("formError");
   if (form) {
@@ -59,23 +62,56 @@
       }
       err.hidden = true;
 
-      var subject = "Quote Request — " + service + " — " + name;
-      var bodyLines = [
-        "New quote request from the Taiwanese Enterprises LLC website.",
-        "",
-        "Name: " + name,
-        "Phone: " + phone,
-        "Email: " + email,
-        "Service: " + service,
-        "",
-        "Job details:",
-        message || "(none provided)"
-      ];
-      var href = "mailto:" + BUSINESS_EMAIL
-        + "?subject=" + encodeURIComponent(subject)
-        + "&body=" + encodeURIComponent(bodyLines.join("\n"));
+      function mailtoFallback() {
+        var subject = "Quote Request — " + service + " — " + name;
+        var bodyLines = [
+          "New quote request from the Taiwanese Enterprises LLC website.",
+          "",
+          "Name: " + name,
+          "Phone: " + phone,
+          "Email: " + email,
+          "Service: " + service,
+          "",
+          "Job details:",
+          message || "(none provided)"
+        ];
+        var href = "mailto:" + BUSINESS_EMAIL
+          + "?subject=" + encodeURIComponent(subject)
+          + "&body=" + encodeURIComponent(bodyLines.join("\n"));
+        window.location.href = href;
+      }
 
-      window.location.href = href;
+      function showSent() {
+        form.innerHTML = '<p class="form-success" role="status">Request received. We will call you back soon.</p>';
+      }
+
+      if (!("fetch" in window)) {
+        mailtoFallback();
+        return;
+      }
+
+      fetch("/api/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          email: email,
+          service: service,
+          details: message
+        })
+      }).then(function (resp) {
+        if (!resp.ok) throw new Error("bad status " + resp.status);
+        return resp.json();
+      }).then(function (result) {
+        if (result && result.ok) {
+          showSent();
+        } else {
+          mailtoFallback();
+        }
+      }).catch(function () {
+        mailtoFallback();
+      });
     });
   }
 })();

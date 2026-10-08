@@ -1,0 +1,14 @@
+[Unit]
+Description=Taiwanese Enterprises LLC website backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/te
+Environment=PORT=80
+ExecStart=/opt/te/backend/build/te_server
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
