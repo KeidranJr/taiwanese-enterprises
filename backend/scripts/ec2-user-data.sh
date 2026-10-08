@@ -9,6 +9,19 @@
 # Type HTTP, Port 80, Source 0.0.0.0/0.
 
 set -e
+exec > /var/log/te-install.log 2>&1
+
+echo "=== TE install starting ==="
+
+# t3.micro only has 1GB RAM and compiling Crow needs more.
+# Add 2GB of swap so the build does not run out of memory.
+if [ ! -f /swapfile ]; then
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo "/swapfile none swap sw 0 0" >> /etc/fstab
+fi
 
 # Tools to compile the C++ server and the SQLite dev headers.
 apt-get update -y
@@ -22,9 +35,10 @@ else
     git -C /opt/te pull
 fi
 
-# Build the server.
+# Build the server. -j1 on purpose: t3.micro cannot handle
+# parallel Crow compiles without running out of memory.
 cmake -S /opt/te/backend -B /opt/te/backend/build
-cmake --build /opt/te/backend/build -j"$(nproc)"
+cmake --build /opt/te/backend/build -j1
 
 # Install and start the systemd service (listens on port 80).
 cp /opt/te/backend/te-backend.service /etc/systemd/system/te-backend.service
@@ -32,4 +46,5 @@ systemctl daemon-reload
 systemctl enable te-backend
 systemctl start te-backend
 
-echo "Taiwanese Enterprises backend installed and started."
+echo "=== TE install finished ==="
+systemctl status te-backend --no-pager || true
