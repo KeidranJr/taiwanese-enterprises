@@ -3,13 +3,17 @@
 // Serves the static website and exposes a small JSON API:
 //   GET  /api/services   the service list
 //   POST /api/quote      submit a quote request, saved in SQLite
-//   GET  /api/quotes     list stored quotes (simple admin view)
+//   GET  /api/quotes     list stored quotes (owner only, needs the
+//                        X-Admin-Token header to match ADMIN_TOKEN;
+//                        closed entirely when ADMIN_TOKEN is not set)
 //
 // Config through environment variables:
 //   PORT        port to listen on, default 8080
 //   STATIC_DIR  folder with index.html etc, default is the repo root
 //               found next to this binary (binary lives in backend/build)
 //   QUOTES_DB   SQLite file path, default ./quotes.db
+//   ADMIN_TOKEN secret that unlocks GET /api/quotes. When it is not
+//               set, that route answers 404 like it does not exist.
 
 #include <cstdlib>
 #include <fstream>
@@ -178,10 +182,20 @@ int main() {
             return jsonResponse(200, ok);
         });
 
-    // Stored quotes for the owner.
-    // NOTE: this is open for now. Before putting real customer data
-    // through it, add a login or a secret token check here.
-    CROW_ROUTE(app, "/api/quotes")([&] {
+    // Stored quotes for the owner only. Customer names, phones and
+    // emails sit in these rows, so this route stays shut unless the
+    // caller sends the ADMIN_TOKEN secret in the X-Admin-Token
+    // header. When ADMIN_TOKEN is not set on the server at all, the
+    // route answers 404, same as a page that does not exist.
+    const std::string adminToken = getEnv("ADMIN_TOKEN", "");
+    CROW_ROUTE(app, "/api/quotes")([&, adminToken](const crow::request& req) {
+        if (adminToken.empty() ||
+            req.get_header_value("X-Admin-Token") != adminToken) {
+            crow::json::wvalue e;
+            e["ok"] = false;
+            e["error"] = "not found";
+            return jsonResponse(404, e);
+        }
         auto quotes = store.allQuotes();
         crow::json::wvalue j;
         for (size_t i = 0; i < quotes.size(); i++) {

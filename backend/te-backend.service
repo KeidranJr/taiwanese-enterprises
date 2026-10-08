@@ -15,6 +15,12 @@ Environment=PORT=80
 #Environment=GMAIL_USER=taiwanenterprisellc@gmail.com
 #Environment=GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
 #Environment=NOTIFY_TO=taiwanenterprisellc@gmail.com
+# Owner-only quote list (GET /api/quotes). Pick a long random secret,
+# remove the # below and fill it in, then restart the service. While
+# this stays commented out, /api/quotes answers 404 to everyone.
+# Read the list with:
+#   curl -H "X-Admin-Token: your-secret" http://3.145.38.246/api/quotes
+#Environment=ADMIN_TOKEN=change-me-to-a-long-random-secret
 ExecStart=/opt/te/backend/build/te_server
 Restart=on-failure
 RestartSec=5
