@@ -128,7 +128,7 @@ img { display: block; max-width: 100%; }
 
 .hero-bg {
   position: absolute; inset: 0;
-  background: url("images/web/hero-truck.webp") center 65% / cover no-repeat;
+  background: url("images/web/dually-hero.webp") center 55% / cover no-repeat;
 }
 
 .hero-overlay {
