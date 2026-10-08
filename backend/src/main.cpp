@@ -16,12 +16,15 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unistd.h>
 #include <limits.h>
 
 #include "../third_party/crow.h"
 #include "models.hpp"
 #include "quote_store.hpp"
+#include "mailer.hpp"
+#include <curl/curl.h>
 
 namespace {
 
@@ -94,6 +97,13 @@ int main() {
         return 1;
     }
 
+    // Reads GMAIL_USER / GMAIL_APP_PASSWORD / NOTIFY_TO from the
+    // environment. Stays silent when they are not set.
+    EmailNotifier notifier;
+
+    // One time libcurl setup. Must run before any thread sends email.
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
     crow::SimpleApp app;
 
     // Homepage.
@@ -153,6 +163,15 @@ int main() {
                 e["error"] = "could not save quote";
                 return jsonResponse(500, e);
             }
+            // Email the owner on a background thread so the web
+            // response stays fast even if Gmail is slow. A copy of
+            // the quote goes with the thread, nothing shared.
+            std::thread([notifier, q]() mutable {
+                if (!notifier.sendQuoteNotification(q)) {
+                    std::cerr << "quote email not sent for "
+                              << q.name() << "\n";
+                }
+            }).detach();
             crow::json::wvalue ok;
             ok["ok"] = true;
             ok["id"] = id;

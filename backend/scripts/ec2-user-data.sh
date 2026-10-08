@@ -23,9 +23,9 @@ if [ ! -f /swapfile ]; then
     echo "/swapfile none swap sw 0 0" >> /etc/fstab
 fi
 
-# Tools to compile the C++ server and the SQLite dev headers.
+# Tools to compile the C++ server, plus SQLite and libcurl dev headers.
 apt-get update -y
-apt-get install -y build-essential cmake libsqlite3-dev git
+apt-get install -y build-essential cmake libsqlite3-dev libcurl4-openssl-dev git
 
 # Get the website plus the backend code.
 mkdir -p /opt/te

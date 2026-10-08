@@ -14,20 +14,22 @@ backend/
   src/models.hpp          Service and QuoteRequest classes
   src/quote_store.hpp     SQLite storage interface
   src/quote_store.cpp     SQLite storage implementation
+  src/mailer.hpp          EmailNotifier interface (Gmail SMTP alerts)
+  src/mailer.cpp          EmailNotifier implementation (libcurl)
   src/main.cpp            routes, static file serving, server startup
-  CMakeLists.txt          C++17 build, links sqlite3 and pthread
+  CMakeLists.txt          C++17 build, links sqlite3, pthread, libcurl
   te-backend.service      systemd unit for EC2
   scripts/ec2-user-data.sh one shot EC2 setup script
 ```
 
 ## Build locally
 
-You need g++, CMake, and the SQLite dev headers.
+You need g++, CMake, and the SQLite and libcurl dev headers.
 
 Ubuntu:
 
 ```
-sudo apt-get install -y build-essential cmake libsqlite3-dev
+sudo apt-get install -y build-essential cmake libsqlite3-dev libcurl4-openssl-dev
 ```
 
 Then from the repo root:
@@ -56,11 +58,49 @@ Environment variables:
 | PORT       | 8080                 | Port to listen on               |
 | STATIC_DIR | repo root next to the binary | Folder with index.html etc |
 | QUOTES_DB  | ./quotes.db          | SQLite file for quote requests  |
+| GMAIL_USER | (unset)              | Gmail address that sends alerts |
+| GMAIL_APP_PASSWORD | (unset)        | 16 letter Gmail app password    |
+| NOTIFY_TO  | GMAIL_USER           | Where quote alert emails go     |
 
 Example with a custom port:
 
 ```
 PORT=3000 ./te_server
+```
+
+## Email alerts for new quotes
+
+When GMAIL_USER and GMAIL_APP_PASSWORD are set, the server emails you
+every time someone submits the quote form. Without them it just skips
+the email and the site works the same.
+
+Setup (one time):
+
+1. Turn on 2-Step Verification for the Gmail account:
+   Google Account > Security > 2-Step Verification.
+2. Create an app password:
+   Google Account > Security > App passwords > name it "TE server".
+   Google shows a 16 letter code. That is the app password, not your
+   normal login password.
+3. On the EC2 machine, open the service file and fill in the values:
+
+```
+sudo nano /etc/systemd/system/te-backend.service
+```
+
+Remove the `#` from the three `Environment=` lines under the email
+comment and put in the real Gmail address and app password. Then:
+
+```
+sudo systemctl daemon-reload
+sudo systemctl restart te-backend
+```
+
+Test it: submit the quote form on the site. You should get an email
+within a minute. If nothing arrives, check the log:
+
+```
+sudo journalctl -u te-backend --no-pager | tail -20
 ```
 
 ## API

@@ -6,6 +6,15 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/te
 Environment=PORT=80
+# Email alerts for new quote requests (through Gmail). To turn them on,
+# remove the # below and fill in the real values, then restart the service:
+#   sudo systemctl restart te-backend
+# GMAIL_USER is the Gmail address. GMAIL_APP_PASSWORD is a 16 letter app
+# password from Google Account > Security > App passwords (needs 2-Step
+# Verification on). NOTIFY_TO defaults to GMAIL_USER when left out.
+#Environment=GMAIL_USER=taiwanenterprisellc@gmail.com
+#Environment=GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+#Environment=NOTIFY_TO=taiwanenterprisellc@gmail.com
 ExecStart=/opt/te/backend/build/te_server
 Restart=on-failure
 RestartSec=5
